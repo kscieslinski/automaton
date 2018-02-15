@@ -1,0 +1,798 @@
+<!DOCTYPE html>
+<html>
+<head>
+<title>[PW] Task no. 3: Automata</title>
+<meta charset="UTF-8">
+<meta name="author" content="Marcin P">
+<meta lang="en">
+<style>
+body {
+  max-width: 1000px;
+  background-color: #dddddd;
+  color: black;
+}
+p {
+  text-align: justify;
+}
+
+code {
+  font-weight: bold;
+}
+
+div.myCode{
+  margin-left: 15px;
+  margin-bottom: 10px;
+}
+table, th, td {
+border: 1px solid black;
+text-align: left;
+vertical-align:top;
+
+}
+div.myPseudoCode{
+  background-color: white;
+  border: 1px solid black;
+  white-space : pre;
+  margin-left: 15px;
+}
+</style>
+
+</head>
+
+
+<body>
+<!--
+Automat
+-->
+<h1>
+Updates
+</h2>
+<p>
+<ul>
+<li>22 XII 2016: first draft </li>
+<li>30 XII 2016: updates and comments to <code>accept</code> and examples. Important updates are <font color="green">green.</font></li>
+<li>09 I 2018: use of signals is allowed, <b><a href="#faq">FAQ</a></b> added.</li>
+<li>13 I 2018: updated FAQ; the deadline postponed till <b>22 I 2018, 23:59</b>; submission of the solution will be 
+described tommorow. 14 I 2018</li>
+<li>14 I 2018: task submission.</li>
+<li>19 I 2018: FAQ update</li>
+</ul>
+</p>
+
+<h1>Automaon</h1>
+<p>
+A finite automaton -- a simple state machine which accepts or rejects words.
+A word is any finite sequence of letters from an alphabet.
+An alphabet is any finite set. 
+If <b>w</b> is a word , then by <b>|w|</b> we denote its length, and by <b>w[i]</b>, <b>0 <= i &lt; |w|</b>,
+its i-th letter.
+Moreover, the symbol &epsilon; denotes an unique empty word, i.e. a word of length 0.
+</p>
+<p>
+Formally, an automaton <b>A</b> is a tuple <b>(L, E, U, F, q<sub>I</sub>, T)</b>, where <b>L</b> is an alphabet,
+<b>E</b> is a set of existential states,
+<b>U</b> is a set of universal states, <b>Q &#x225D; E &cup; U</b> is the set of all states of <b>A</b>, 
+<b>F&isin;Q</b> is the set of final states, <b>q<sub>I</sub></b> is the unique initial state,
+and <b>T: Q &times; L &rarr; P(Q)</b> is the transition function.
+</p>
+<p>
+Intuitively, an automaton recognises a word in the following way: the automaton starts in the initial state
+and reads the word, letter by letter. When the automaton is in state <b>q</b> and sees a letter <b>a</b>
+then it ``chooses'' the next state from the set <b>T(q,a)</b> and proceeds.
+If <b>q</b> is universal then every such choice has to lead to acceptance, is <b>q</b> is existential then only one has to 
+lead to acceptance. Acceptance, in this context, requires that the above process after reading the last
+letter of the word ends up in a final state.
+</p><p>
+More formally: the above process can be described as a tree.
+A run of the automaton <b>run</b> on word <b>w</b> of length <b>d</b> is a tree of height <b>d+1</b>.
+(For instance, a run on the epty word has unique node -- the root -- at the depth <b>0</b>.)
+The root <b>&epsilon;</b> of the run is labelled <b>run[&epsilon;] = q<sub>I</sub></b> and every node <b>u</b> 
+in the tree satisfies the following:
+if node <b>u</b> is at depth <b>i</b>, is labelled <b>q</b> and
+<ul>
+<li><b>T(q, w[i]) = &empty;</b> then <b>u</b> is a leaf;</li>
+<li><b>T(q, w[i]) &ne;  &empty;</b> and the state <b>q</b> is existential then <b>u</b> has exactly one child labelled 
+with a state belonging to the set <b>T(q, w[i])</b>;</li>
+<li><b>T(q, w[i]) &ne;  &empty;</b> and <b>q</b> universal then node <b>u</b> has exactly one 
+<b>p</b>-labelled child for every state <b>p &isin; T(q, w[i])</b> .</li>
+</ul>
+We say that a run is accepting if the leafs' labels on depth <b>d</b> are final states and the labels of the remaining leafs are
+universal states. A word is accepted by an automaton if there is an accepting run.
+If there is non then the automaton rejects the word.
+</p><p>
+The acceptance of a word can also be described as a recursive function.
+An automaton accepts a word <b>w</b> if the following function <code>bool accept(string w, string r)</code>
+<div class="myPseudoCode">
+<code>// this function accepts the word @w continuing the process from the last node of the path @r 
+// belonging to some run of the automaton
+bool accept(string w, string r):
+
+&nbsp;&nbsp;d := |r|-1;
+
+&nbsp;&nbsp;if (d &ge; |w|)
+&nbsp;&nbsp;&nbsp;&nbsp;//we have processed every letter in @w; accept if the last state is accepting
+&nbsp;&nbsp;&nbsp;&nbsp;return (<font color="green">r[d]</font> &isin; F);
+
+&nbsp;&nbsp;if (r[d] &isin; E)
+&nbsp;&nbsp;&nbsp;&nbsp;// the last state is existential so accept if there
+&nbsp;&nbsp;&nbsp;&nbsp;// is an accepting continuation of the run @r
+&nbsp;&nbsp;&nbsp;&nbsp;return (&exist;<font color="green">q&isin;T(r[d],w[d])</font> accept(w,rq))
+
+&nbsp;&nbsp;// otherwise, the last state is universal (r[d] &isin; U)
+&nbsp;&nbsp// and we have to accept every possible continuation
+&nbsp;&nbsp;return (&forall;<font color="green">q&isin;T(r[d],w[d])</font> accept(w,rq))
+</code>
+</div>
+returns <code>true</code> when called as <code>accept(w,q<sub>I</sub>)</code>.
+</p><p>
+Pozor! Variables <code>w,r</code> are words and <code>rq</code> is the conctatenation of the word <code>r</code> and the letter (also a state)
+<code>q</code>. Intuitively, <code>r</code> can be seen as a path in a run.
+
+</p>
+<!--
+SERWER
+-->
+<h1>The task</h1>
+<p>
+We require three programs: <code>validator</code>, <code>run</code> and 
+<code>tester</code>.
+</p>
+<h3>Proces <code>validator</code></h3>
+<p>
+The <code>validator</code> is a server accepting, or rejecting, words.
+A word is accepted if it is accepted by specified automaton.
+The program <code>validator</code> begins by reading from the standard input the description of the automaton and then 
+in an infinite loop waits for the words to verify.
+When a word is received he runs the program <code>run</code> which validates the word and <code>vaidator</code>
+waits for an another word or response from the program <code>run</code>.
+Afer receiving a message from one of the <code>run</code> processes <code>validator</code>
+forwords the message to the adequate <code>tester</code>.
+<!---
+wypisuje na standardowe wyjście pid procesu <code>tester</code>, który przesłał zweryfikowane słowo, weryfikowane słowo i literę <code>A</code> jeśli słowo zostało zaakceptowane lub
+literę <code>N</code> jeśli zostało odrzucone, tj. wypisuje linię postaci 
+<div class="myCode">
+<code>
+ pid [a-z] A|N\n<br />
+</code>
+</div>
+--->
+</p><p>
+When a <code>tester</code> send an unique stop word <code>!</code>
+the server stops , i.e. he does not accept new words, collects the responses from the <code>run</code> processes,
+forwards the answers, writes a report on <code>stdout</code>, and, finally, terminates.
+</p>
+<p>The <code>validator</code> report consist in 
+three lines describing the numbers of received queries, sent answers and accepted words:
+</p>
+<div class="myCode">
+<code>
+  Rcd: x\n<br/>
+  Snt: y\n<br/>
+  Acc: z\n<br />
+</code>
+</div>
+<p>
+where <code>x,y,z</code> respectively are the numbers of received queries, sent answers and accepted words;
+and a sequence of summaries of the interactions with the programs <code>tester</code>
+from which <code>validator</code> received at least one query.
+A summary for a <code>tester</code>
+with  PID <code>pid</code> consists in:
+<p>
+</p>
+<div class="myCode">
+<code>
+ [PID: pid\n<br />
+  Rcd: y\n<br/>
+  Acc: z\n]<br />
+</code>
+</div>
+wher <code>pid,y,z</code> respectively are: the process' pid, the number of messages received from this process and the number of
+acceped words sent by this process.
+</p>
+
+<h3>Process <code>run</code></h3>
+<p>
+Program <code>run</code> receives from <code>validator</code> a word to verify and the description of the automaton.
+Then he begins the verification.
+When the verification stops, the process sends a message to the server and terminates.
+</p>
+<h3>Process <code>tester</code></h3>
+<p>
+Queries in a form of words are sent by programs <code>tester</code>. A program <code>tester</code> 
+in an infinite loop read words form the standard input stream and forwards them to the server.
+Every word is written in a single line and the line feed symbol <code>\n</code> does not belong to
+any of the words.
+</p><p>
+When the <code>tester</code> receives an answer from the server, he writes on the standard output stream
+the word he resecived answer for and the decision <code>A</code> if the word was accepted and 
+<code>N</code> if not.
+</p><p>
+Ant <code>teste</code> terminates when the server terminates of when <code>tester</code> receives
+the <code>EOF</code> symbol, i.e. the end of file symbol.
+When the <code>tester</code> terminates it sends no new queries, waits for the remaining answers from the server, and
+writes on the standard outpu a report.
+</p>
+<P>A Report of  a <code>tester</code> consist of three lines
+<div class="myCode">
+<code>
+  Snt: x\n<br/>
+  Rcd: y\n<br/>
+  Acc: z\n<br />
+</code>
+</div>
+wher <code>x,y,z</code> respectively are the numbers of:  queries, received answers, and accepted words sent by this process.
+</P>
+<h3>Input and output of the processes</h3>
+<p>
+The exact description of the input and the automaton description can be found in <a href="#std_in">Input</a>.
+The description of reports is in <a href="#std_out">Output</a>.
+</p>
+<h3>Misc.</h3>
+<p>
+We require the solution to be written in  the <code>C</code> language, and that the communication between <code>validator,
+tester</code>, and <code>run</code> is achieved using message queues.
+The internal communication between the <code>run</code> processes
+can be done using pipes.
+</p>
+<p>
+The processes of the words verification and query answering should be done in a concurrent manner.</p>
+<!--
+TUTAJ OPIS WEJSCIA
+-->
+<h1 id="std_in">Input</h1>
+<p>
+Here we will describe the input. A sequence <code>[wyr]</code> denotes that the string <code>wyr</code> 
+repeats a finite (greater than or equal to 0) number of times.</p>
+<h4>Program <code>validator</code></h4>
+<p>
+Input of a <code>validator</code>
+consist in the automaton description:
+</p>
+<div class="myCode">
+<code>
+  N A Q U F\n<br/>
+  q\n<br/>
+  [q]\n<br/>
+  [q a r [p]\n]<br/>
+</code>
+</div>
+<p>
+where
+<ul>
+  <li> <code>N</code> is the number of lines of the input;</li>
+  <li> <code>A</code> is the size of the alphabet: the alphabet is the set {a,...,x}, where <b>'x'-'a' = A-1</b>;</li>
+  <li> <code>Q</code> is the number of states: the states are the set <b>{0,...,Q-1}</b>;</li>
+  <li> <code>U</code> is the number of universal states: universal states = <b>{0, .., U-1}</b>,
+  existential states = <b>{U, .., Q-1}</b>;</li>
+  <li> <code>F</code> is the number of final states;</li>
+  <li> <code>q,r,p</code> denotes some states;</li>
+  <li> and <code>a</code> is a letter of the alphabet</li>.
+</ul>
+</p>
+<p>
+The first line gives the cardinalities of the sets describing the automaton.
+The second line gives the initial stare, the third line is the list of final states.
+The remaining lines, of form:
+<code>
+  q a r [p]\n
+</code>, 
+encode the transition function in the following way: if there is a line
+<code>q&nbsp;a&nbsp;p<sub>1</sub>&nbsp;p<sub>2</sub>&nbsp;...&nbsp;p<sub>k</sub></code>
+then <b>T(q,a) = {p<sub>1</sub>, p<sub>2</sub>, ..., p<sub>k</sub> }</b>.
+If for any pair <b>(q,a)</b> there is no line in the encoding then one assumes that <b>T(q,a) = &emptyset;</b>.
+</p><p>
+One can assume that: <b>0 <= F,U <= Q < 100</b>, <b>0 <= A <= 'z'-'a'</b>.
+</p>
+<h4>Program <code>tester</code></h4>
+<p>
+A <code>tester</code> on the standard input stream receives the following string.
+<div class="myCode">
+<code>
+  [[a-z]\n]<br/>
+  [!\n]<br/>
+  [[a-z]\n]<br/>
+</code>
+</div>
+where<ul>
+<li><code>a-z</code> are the alphabet letters;</li>
+<li><code>!</code> is the unique terminate the server symbol.</li>
+
+</ul>
+</p>
+<p>
+One can assume that the length of the supplied words will not exceed the constant <b>MAXLEN=1000</b>.
+</p>
+<!--
+TUTAJ OPIS WYJSCIA
+-->
+<h1 id="std_out">Output</h1>
+<h3>The <code>validator</code>'s output</h3>
+<p>The <code>validator</code> on the standard output writes the following string:
+<div class="myCode">
+<code>
+  Rcd: x\n<br/>
+  Snt: y\n<br/>
+  Acc: z\n<br />
+ [PID: pid\n<br />
+  Rcd: p\n<br/>
+  Acc: q\n]<br />
+
+</code>
+</div>
+where<ul>
+<li><code>x</code> is the number of received queries;</li>
+<li><code>y</code> is the number of sent answers;</li>
+<li><code>z</code> is the number of accepted words;</li>
+<li><code>pid</code> is the <code>pid</code> of a <code>tester</code> process;</li>
+<li><code>p</code> is the number of queries sent by process of the PID <code>pid</code>;</li>
+<li><code>q</code> is the number of the accepted words sent by process of the PID <code>pid</code>;</li>
+</ul>
+
+<h3>The <code>tester</code>'s output</h3>
+<p>Any program <code>tester</code> writes on the standard output a string of the following form:
+<div class="myCode">
+<code>
+  PID: pid\n<br/>
+  [[a-z] A|N\n]<br/>
+  Snt: x\n<br/>
+  Rcd: y\n<br/>
+  Acc: z\n<br />
+</code>
+</div>
+where<ul>
+<li><code>pid</code> is the tester's <code>pid</code>;</li>
+<li><code>a-z</code> are some letters;</li>
+<li><code>x</code> is the number of sent queries;</li>
+<li><code>y</code> is the number of received answers;</li>
+<li>and <code>z</code> is the number of accepted words.</li>
+
+</ul>
+
+
+<section>
+<!--
+PRZYKLADY
+-->
+<h1> Examples </h1>
+
+<h3 id="aut1">Example 1</h3>
+<p>Accept words with an even number of letters <code>a</code>.</p>
+<table>
+	<tr>
+		<td>
+		<p>
+		Input <code>validator</code>:
+		</p>
+		<div class="myCode">
+			<code>
+			7 2 2 0 1<br/>
+			0<br/>
+			1<br/>
+			0 a 1<br/>
+			0 b 0<br/>
+			1 a 0<br/>
+			1 b 1<br/>
+			</code>
+			</div>
+		</td>
+		<td>
+			</p>
+		Input <code>tester</code>:</p>
+			<div class="myCode">
+			<code>
+			a<br />
+			aa<br />
+			ab<br />
+			aabbaba<br />
+			!<br />
+			</code>
+			</div>
+			</p>
+		</td>	
+		</tr>
+	<tr>
+		<td>
+			<p>Output <code>validator</code>:</p>
+			<div class="myCode">
+			<code>
+			Rcd: 4<br />
+			Snt: 4<br />
+			Acc: 2<br />
+			PID: pid<br/>
+			Rcd: 4<br />
+			Acc: 2<br />
+			</code>
+			</div>	
+		</td>
+		<td>
+			<p>Output <code>tester</code>:</p>
+			<div class="myCode">
+			<code>
+			PID: pid <br/>
+			a A<br />
+			aa N<br />
+			aabbaba N<br />
+			ab A<br />
+			Snt: 4<br />
+			Rcd: 4<br />
+			Acc: 2<br />
+			</code>
+			</div>
+		</td>	
+	</tr>
+</table>
+
+<p>Runs of this automaton on words (i) <code>aabab</code> oraz (ii) <code>aa</code>.</p>
+<img src="./obrazki/p1aabab.png" alt="p1" />
+
+<h3 id="aut2">Example 2</h3>
+<p>Accept words such that, after every letter <code>a</code> there is a letter <code>b</code>.</p>
+
+<table>
+	<tr>
+		<td>
+			<p>
+			Input <code>validator</code>:
+			</p>
+			<div class="myCode">
+			<code>
+			  7 2 2 1 1<br/>
+			  0<br/>
+			  0<br/>
+			  0 a 0 1<br/>
+			  0 b 0<br/>
+			  1 a 1<br/>
+			  1 b 0<br/>
+			</code>
+			</div>
+		</td>
+		<td>
+			</p>Input <code>tester</code>:</p>
+			<div class="myCode">
+			<code>
+			  a<br />
+			  <br />
+			  ab<br />
+			  aabbaba<br />
+			  !<br />
+			</code>
+			</div>
+			</p>
+		</td>	
+		</tr>
+	<tr>
+		<td>
+			</p>Output <code>validator</code>:</p>
+			<div class="myCode">
+			<code>
+			  Rcd: 4<br />
+			  Snt: 4<br />
+			  Acc: 2<br />
+			  PID: pid<br/>
+			  Rcd: 4<br />
+			  Acc: 2<br />
+			</code>
+			</div>		
+		</td>
+		<td>
+			</p>Output <code>tester</code>:</p>
+			<div class="myCode">
+			<code>
+			  PID: pid <br/>
+			  &nbsp;A<br />
+			  a N<br />
+			  aabbaba N<br />
+			  ab A<br />
+			  Snt: 4<br />
+			  Rcd: 4<br />
+			  Acc: 2<br />
+			</code>
+			</div>
+			</p>
+		</td>	
+	</tr>
+</table>
+
+<h3>Runs</h3>
+<p>A run on the word <code>aaba</code></p>
+<img src="./obrazki/p2aaba.png" alt="p1" />
+
+
+
+
+
+<h3 id="aut3">Example 3</h3>
+<p>Accept words such that, after every letter <code>a</code> there is a letter <code>b</code>, different automaton.</p>
+
+<table>
+	<tr>
+		<td>
+			<p>
+			Input<code>validator</code>:
+			</p>
+			<div class="myCode">
+			<code>
+			  6 2 2 2 1<br/>
+			  0<br/>
+			  0<br/>
+			  0 a 0 1<br/>
+			  0 b 0<br/>
+			  1 a 1<br/>
+			</code>
+			</div>
+		</td>
+		<td>
+			</p>Input <code>tester</code>:</p>
+			<div class="myCode">
+			<code>
+			  a<br />
+			  <br />
+			  ab<br />
+			  aabbaba<br />
+			  !<br />
+			</code>
+			</div>
+			</p>
+		</td>	
+		</tr>
+	<tr>
+		<td>
+			</p>Output <code>validator</code>:</p>
+			<div class="myCode">
+			<code>
+			  Rcd: 4<br />
+			  Snt: 4<br />
+			  Acc: 2<br />
+			  PID: pid<br/>
+			  Rcd: 4<br />
+			  Acc: 2<br />
+			</code>
+			</div>
+		</td>
+		<td>
+			</p>Output <code>tester</code>:</p>
+			<div class="myCode">
+			<code>
+			  PID: pid <br/>
+			  &nbsp;A<br />
+			  a N<br />
+			  aabbaba N<br />
+			  ab A<br />
+			  Snt: 4<br />
+			  Rcd: 4<br />
+			  Acc: 2<br />
+			</code>
+			</div>
+		</td>	
+	</tr>
+</table>
+</p>
+<h3>Runs</h3>
+<p>A run on the word <code>aabab</code></p>
+<img src="./obrazki/p3aabab.png" alt="p1" />
+
+
+<h3 id="aut4">Example 4</h3>
+<p>Accept words such that, first letter is <code>a</code> and (there is an even number of letters <code>a</code>
+or the last letter is <code>b</code>.)</p>
+<table>
+	<tr>
+		<td>
+			<p>
+			Input <code>validator</code>:
+			</p>
+			<div class="myCode">
+			<code>
+			  12 2 5 0 2<br/>
+			  0<br/>
+			  2 4<br/>
+			  0 a 1 3<br/>
+			  1 a 2<br/>
+			  1 b 1<br/>
+			  2 a 1<br/>
+			  2 b 2<br/>
+			  3 a 3<br/>
+			  3 b 4<br/>
+			  4 a 3<br/>
+			  4 b 4<br/>
+			</code>
+			</div>
+		</td>
+		<td>
+			</p>Input <code>tester</code>:</p>
+			<div class="myCode">
+			<code>
+			  ab<br />
+			  a<br />
+			  aba<br />
+			  aabbaba<br />
+			  !<br />
+			</code>
+			</div>
+			</p>
+		</td>	
+		</tr>
+	<tr>
+		<td>
+			</p>Output <code>validator</code>:</p>
+			<div class="myCode">
+			<code>
+			  Rcd: 4<br />
+			  Snt: 4<br />
+			  Acc: 3<br />
+			  PID: pid<br/>
+			  Rcd: 4<br />
+			  Acc: 3<br />
+			</code>
+			</div>
+		</td>
+		<td>
+			</p>Output <code>tester</code>:</p>
+			<div class="myCode">
+			<code>
+			  PID: pid <br/>
+			  ab A<br />
+			  a N<br />
+			  aabbaba A<br />
+			  aba A<br />
+			  Snt: 4<br />
+			  Rcd: 4<br />
+			  Acc: 3<br />
+			</code>
+			</div>
+			</p>
+		</td>	
+	</tr>
+</table>
+
+<h3>Runs</h3>
+<p>Two runs on the word <code>aabab</code>, (i) does not accept, (ii) does.</p>
+<img src="./obrazki/p4aabba.png" alt="p1" />
+<!--
+ROZWIAZANIE
+-->
+<h1>Testing and the solution.</h1>
+<!--
+<p>
+Rozwiązanie należy przesłać na adres <code>M.Przybylko@mimuw.edu.pl</code>.
+Przesłana wiadomość powinna być zatytułowana <code>[PW] zadanie3</code>
+-->
+<p> 
+The solution should be contained in an archive <b>ab123456.zip</b>, and should consists in
+the source codes, the makefiles and the readme file.
+The sequence <b>ab123456</b> should be replaced by the student's server alias.
+</p>
+
+<p>The following sequence of commands:
+<div class="myCode">
+<code>
+  unzip ab123456.zip; cd ab123456; mkdir build; cd build; cmake ..; make
+</code>
+</div>
+<br/>
+should result in the creation of the following files in the directory build
+<code>validator</code>, <code>run</code>, <code>tester</code>.
+Those files will be run, e.g., using the following sequence of commands
+<br/>
+<div class="myCode">
+<code>
+  <br/>
+  ./validator &lt;validator.in<br />
+  ...<br />
+  ./tester &lt;t1.in<br />
+  ...<br />
+  ./tester &lt;t2.in<br />
+  ...<br />
+  ./myFeed | ./tester <br />
+</code>
+</div>
+Moreover, in the archive there should be a file <code> README.pdf </code> describing the solution.
+The file should contain the full description of the means of communication, the list of used resources,
+and the list of assumptions (if any).
+
+</p>
+
+
+<!--
+ROZWIAZANIE
+-->
+<h2>Deadline</h2>
+<p>
+The solution should be sent on <b><del>19 January 2018</del> 22 January 2018,  at 23:59</b> at the latest.
+
+</p>
+<font color="darkgreen">
+<p>
+<del>The exact means of sending the solution will be provided at a later date.</del>
+Because of the postponed deadline, we publish verification script named <code>unpack</code>, which run as
+</p>
+<div class="myCode">
+<code>
+./unpack ab123456
+</code>
+</div>
+<p>in the directory containinig the archive ab123456.zip will: unpack the archive, move the README.pdf file
+to the appropriate place and, compile the solution.
+</p>
+<p>
+<b>Warning!</b> The solutions, which will not work with the <code>unpack</code> script will
+receive 0 points.</p>
+<p>
+Any questions to the <code>unpack</code> script should be sent before Wednesday the 17th I 2018. 
+</p>
+</font>
+
+<!--
+UWAGI
+-->
+<h2>MISC</h2>
+<p>
+Few assumptions:
+<ul>
+  <li>One can assume that the input will be consistent with the above description.
+  Still, if any system call fails, one needs to react appropriately, clean up the resources and terminate gracefully.
+  </li>
+  <li>We require that any parent process should wait for its children to terminate 
+  and every system resource .</li>
+  <li>The solution should work when run on the computers in the lab.</li>
+  <li>Any questions should be sent to Marcin Przybyłko: M.Przybylko 'at' mimuw.edu.pl</li>
+</ul>
+</p>
+<h2>Remote access to the lab's computers.</h2>
+<p>
+To be alble to remotely access a computer in the lab
+<ul>
+<li>one should know its name, e.g. <code>yellow01, ..., yellow15</code></li>
+<li>the computer has to be turned on.</li>
+</ul>
+If the above is satisfied then one can remotely access the machines in the following way:
+<ul>
+<li>use <code>ssh</code> to connect with students 
+e.g. <code>ssh username@students.mimuw.edu.pl</code>,
+</li><li>
+and then use <code>ssh</code> to connect to access the computer, e.g.: <code>ssh yellow11</code>.
+</li>
+</ul>
+</p>
+<p>
+To send file to the server one can use <a href="http://man7.org/linux/man-pages/man1/scp.1.html">scp</a>.
+</p>
+<p>windows access can be achieved via <code>putty</code> i <code>winscp</code>.</p>
+<h1 id="faq">FAQ</h1>
+<p>FAQ can be found <a href="https://www.mimuw.edu.pl/~mp249046/teaching/pw2017z/zadania/zadanie3/zadanie3.html#faq">here</a>.</p>
+<!--
+<p>FAQ is in English to avoid maintaining two FAQs.</p>
+<ol>
+<li><p>
+<b>Q</b>: What should happen when one of the programs encounters an error in a system call?
+</p>
+<p><b>A</b>: If an unexpected error occurs in any system call (e.g. <code>ENOMEM</code> in <code>fork</code>,
+but not <code>EAGAIN</code> in <code>mq</code>
+with the <code>O_NONBLOCK</code> flag set) all programs should terminate gracefully, i.e.:
+</p>
+<ul>
+<li>the error should be written out on the stderr stream and the respective process should exit with value <code>-1</code>;</li>
+<li>every acquired system resource (like temporal files, message queues etc.) should be released;</li>
+<li>all processes should terminate, in particular there should be no zombies.</li>
+</ul>
+<p>To help with the termination, we allow the use of <b>signals</b> to message the shut down of the system, even when no error occurred.</p>
+<p>Please recall that some of the system resources are limited. To check some of them, e.g. max user processes, input 
+<div class="myCode"><code> ulimit -a</code></div>
+in terminal.</p>
+<p>Moreover, if one of the programs terminates with an error (with a value that is not <code>0</code>) the standard outputs of all programs are ignored.
+Please take into consideration that we cannot guarantee that the automatic tests do not generate unexpected errors.</p>
+</li>
+
+<li>
+<p><b>Q</b>: Can I use pipes to pass the automaton and the word from the <code>validator</code> process to
+the newly created <code>run</code> process?
+</p>
+
+<p>
+<b>A</b>: Yes, we allow that.
+</p>
+</li>
+</ol>
+--->
+</body>
+</html>
